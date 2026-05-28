@@ -1,0 +1,99 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  --magenta: #F54291;
+  --rosa-medio: #FF78AE;
+  --rosa-claro: #FFA0D2;
+  --crema: #FFF8CD;
+  --dorado: #D4AF37;
+  --dorado-oscuro: #C5A059;
+  --tinta: #3B2430;
+  --borde: rgba(212, 175, 55, 0.24);
+}
+
+* {
+  box-sizing: border-box;
+}
+
+body {
+  min-height: 100vh;
+  color: var(--tinta);
+  background:
+    radial-gradient(circle at top left, rgba(255, 160, 210, 0.35), transparent 28%),
+    radial-gradient(circle at bottom right, rgba(212, 175, 55, 0.18), transparent 30%),
+    linear-gradient(135deg, #fff8cd 0%, #fff7fb 45%, #ffeaf4 100%);
+}
+
+.glass-card {
+  background: rgba(255, 255, 255, 0.84);
+  border: 1px solid var(--borde);
+  box-shadow: 0 16px 42px rgba(245, 66, 145, 0.11);
+  backdrop-filter: blur(16px);
+}
+
+.gold-text {
+  background: linear-gradient(90deg, #C5A059, #D4AF37, #8f6f19);
+  -webkit-background-clip: text;
+  color: transparent;
+}
+
+.btn-primary {
+  background: linear-gradient(135deg, #F54291, #FF78AE);
+  color: white;
+  border-radius: 14px;
+  padding: 0.65rem 1rem;
+  font-weight: 800;
+  box-shadow: 0 10px 24px rgba(245, 66, 145, 0.22);
+  transition: 0.2s ease;
+}
+
+.btn-primary:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 14px 30px rgba(245, 66, 145, 0.28);
+}
+
+.btn-light {
+  background: white;
+  color: var(--tinta);
+  border: 1px solid rgba(212, 175, 55, 0.32);
+  border-radius: 14px;
+  padding: 0.65rem 1rem;
+  font-weight: 800;
+  transition: 0.2s ease;
+}
+
+.btn-light:hover {
+  border-color: rgba(245, 66, 145, 0.35);
+  background: rgba(255, 160, 210, 0.12);
+}
+
+.input {
+  width: 100%;
+  border-radius: 14px;
+  border: 1px solid rgba(197, 160, 89, 0.42);
+  background: rgba(255, 255, 255, 0.92);
+  padding: 0.75rem 0.9rem;
+  outline: none;
+  color: var(--tinta);
+  transition: 0.2s ease;
+}
+
+.input::placeholder {
+  color: rgba(59, 36, 48, 0.45);
+}
+
+.input:focus {
+  border-color: #F54291;
+  box-shadow: 0 0 0 4px rgba(245, 66, 145, 0.12);
+}
+
+table {
+  border-collapse: separate;
+  border-spacing: 0;
+}
+
+button:disabled {
+  cursor: not-allowed;
+}
