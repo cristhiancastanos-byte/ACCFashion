@@ -42,7 +42,8 @@ const inicial = {
   talla: "",
   color: "",
   precio: "",
-  stock: ""
+  stock: "",
+  imagenUrl: ""
 };
 
 export default function ProductosPage() {
@@ -53,6 +54,7 @@ export default function ProductosPage() {
   const [toast, setToast] = useState<{ tipo: ToastTipo; texto: string } | null>(null);
   const [productoAEliminar, setProductoAEliminar] = useState<Producto | null>(null);
   const [cargando, setCargando] = useState(false);
+  const [subiendoImagen, setSubiendoImagen] = useState(false);
 
   function mostrarToast(tipo: ToastTipo, texto: string) {
     setToast({ tipo, texto });
@@ -98,6 +100,38 @@ export default function ProductosPage() {
     );
   }, [productos, busqueda]);
 
+  async function subirImagen(file: File) {
+    setSubiendoImagen(true);
+
+    try {
+      const formData = new FormData();
+      formData.append("imagen", file);
+
+      const res = await fetch("/api/upload", {
+        method: "POST",
+        body: formData
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        mostrarToast("error", data.error || "No se pudo subir la imagen.");
+        return;
+      }
+
+      setForm((prev) => ({
+        ...prev,
+        imagenUrl: data.imagenUrl
+      }));
+
+      mostrarToast("success", "Imagen subida correctamente.");
+    } catch {
+      mostrarToast("error", "Ocurrió un error al subir la imagen.");
+    } finally {
+      setSubiendoImagen(false);
+    }
+  }
+
   function validarFormulario() {
     if (
       !form.nombre.trim() ||
@@ -105,9 +139,10 @@ export default function ProductosPage() {
       !form.talla.trim() ||
       !form.color.trim() ||
       !form.precio ||
-      !form.stock
+      !form.stock ||
+      !form.imagenUrl
     ) {
-      return "Completa todos los campos obligatorios.";
+      return "Completa todos los campos obligatorios, incluyendo la imagen.";
     }
 
     if (Number(form.precio) <= 0) {
@@ -166,13 +201,15 @@ export default function ProductosPage() {
 
   function editar(producto: Producto) {
     setEditando(producto.id);
+
     setForm({
       nombre: producto.nombre,
       categoria: producto.categoria,
       talla: producto.talla,
       color: producto.color,
       precio: String(producto.precio),
-      stock: String(producto.stock)
+      stock: String(producto.stock),
+      imagenUrl: producto.imagenUrl || ""
     });
   }
 
@@ -194,10 +231,7 @@ export default function ProductosPage() {
       const data = await res.json();
 
       if (!res.ok) {
-        mostrarToast(
-          "error",
-          data.error || "No se pudo eliminar la prenda."
-        );
+        mostrarToast("error", data.error || "No se pudo eliminar la prenda.");
         return;
       }
 
@@ -253,8 +287,9 @@ export default function ProductosPage() {
             <div className="mt-5 rounded-2xl bg-crema p-4 border border-dorado/25">
               <p className="font-black">{productoAEliminar.nombre}</p>
               <p className="text-sm text-tinta/60">
-                {productoAEliminar.codigo || `AAC-${String(productoAEliminar.id).padStart(3, "0")}`} ·{" "}
-                {productoAEliminar.categoria} · Talla {productoAEliminar.talla}
+                {productoAEliminar.codigo ||
+                  `AAC-${String(productoAEliminar.id).padStart(3, "0")}`}{" "}
+                · {productoAEliminar.categoria} · Talla {productoAEliminar.talla}
               </p>
             </div>
 
@@ -281,8 +316,11 @@ export default function ProductosPage() {
         </div>
       )}
 
-      <section className="grid gap-5 xl:grid-cols-[420px_1fr]">
-        <form onSubmit={guardar} className="glass-card rounded-[2rem] p-6 grid gap-3">
+      <section className="grid gap-5 xl:grid-cols-[360px_minmax(0,1fr)]">
+        <form
+          onSubmit={guardar}
+          className="glass-card rounded-[2rem] p-6 grid gap-3 h-fit"
+        >
           <div className="flex items-center gap-2">
             <Plus className="text-magenta" />
             <h3 className="text-xl font-black">
@@ -358,7 +396,51 @@ export default function ProductosPage() {
             />
           </div>
 
-          <button className="btn-primary" type="submit" disabled={cargando}>
+          <div className="rounded-3xl border border-dorado/25 bg-white/70 p-4">
+            <label className="block text-sm font-black text-tinta/70">
+              Imagen de la prenda
+            </label>
+
+            <input
+              type="file"
+              accept="image/*"
+              className="mt-3 w-full rounded-2xl border border-dorado/25 bg-white px-4 py-3 text-sm"
+              disabled={subiendoImagen}
+              onChange={(e) => {
+                const file = e.target.files?.[0];
+
+                if (file) {
+                  subirImagen(file);
+                }
+              }}
+            />
+
+            {subiendoImagen && (
+              <p className="mt-2 text-sm font-bold text-magenta">
+                Subiendo imagen...
+              </p>
+            )}
+
+            {form.imagenUrl && (
+              <div className="mt-4">
+                <p className="mb-2 text-sm font-bold text-tinta/60">
+                  Vista previa
+                </p>
+
+                <img
+                  src={form.imagenUrl}
+                  alt="Vista previa de la prenda"
+                  className="h-48 w-full rounded-2xl object-cover border border-dorado/20 bg-crema"
+                />
+              </div>
+            )}
+          </div>
+
+          <button
+            className="btn-primary"
+            type="submit"
+            disabled={cargando || subiendoImagen}
+          >
             {cargando
               ? "Guardando..."
               : editando
@@ -378,7 +460,7 @@ export default function ProductosPage() {
           )}
         </form>
 
-        <div className="glass-card rounded-[2rem] p-6 overflow-hidden">
+        <div className="glass-card rounded-[2rem] p-6 overflow-hidden min-w-0">
           <div className="mb-4 flex items-center gap-3 rounded-2xl bg-white/70 px-4 py-3 border border-dorado/20">
             <Search className="text-magenta" size={20} />
             <input
@@ -389,71 +471,98 @@ export default function ProductosPage() {
             />
           </div>
 
-          <div className="overflow-x-auto">
-            <table className="w-full text-sm">
+          <div className="overflow-x-auto rounded-3xl border border-dorado/20 bg-white/60">
+            <table className="w-full min-w-[1050px] table-fixed text-sm">
               <thead>
                 <tr className="text-left text-tinta/60">
-                  <th className="p-3">Código</th>
-                  <th>Prenda</th>
-                  <th>Categoría</th>
-                  <th>Precio</th>
-                  <th>Stock</th>
-                  <th>Estado</th>
-                  <th>Acciones</th>
+                  <th className="w-[120px] px-5 py-4">Código</th>
+                  <th className="w-[340px] px-5 py-4">Prenda</th>
+                  <th className="w-[160px] px-5 py-4">Categoría</th>
+                  <th className="w-[130px] px-5 py-4">Precio</th>
+                  <th className="w-[90px] px-5 py-4">Stock</th>
+                  <th className="w-[170px] px-5 py-4">Estado</th>
+                  <th className="w-[150px] px-5 py-4 text-center">
+                    Acciones
+                  </th>
                 </tr>
               </thead>
 
               <tbody>
                 {filtrados.length === 0 ? (
                   <tr>
-                    <td className="p-5 text-center text-tinta/60" colSpan={7}>
+                    <td
+                      className="px-5 py-6 text-center text-tinta/60"
+                      colSpan={7}
+                    >
                       No hay prendas registradas o no se encontraron coincidencias.
                     </td>
                   </tr>
                 ) : (
                   filtrados.map((p) => (
-                    <tr key={p.id} className="border-t border-dorado/15 bg-white/45">
-                      <td className="p-3 font-black">
+                    <tr
+                      key={p.id}
+                      className="border-t border-dorado/15 bg-white/45 align-middle"
+                    >
+                      <td className="px-5 py-4 font-black text-tinta">
                         {p.codigo || `AAC-${String(p.id).padStart(3, "0")}`}
                       </td>
 
-                      <td>
-                        {p.nombre}
-                        <p className="text-xs text-tinta/50">
-                          Talla {p.talla} / {p.color}
-                        </p>
+                      <td className="px-5 py-4">
+                        <div className="flex items-center gap-4">
+                          <img
+                            src={p.imagenUrl || "/productos/default.webp"}
+                            alt={p.nombre}
+                            className="h-20 w-20 shrink-0 rounded-2xl object-cover border border-dorado/20 bg-crema"
+                          />
+
+                          <div className="min-w-0">
+                            <p className="font-black leading-tight text-tinta break-words">
+                              {p.nombre}
+                            </p>
+
+                            <p className="mt-1 text-xs leading-snug text-tinta/50 break-words">
+                              Talla {p.talla} / {p.color}
+                            </p>
+                          </div>
+                        </div>
                       </td>
 
-                      <td>{p.categoria}</td>
+                      <td className="px-5 py-4 text-tinta/70 break-words">
+                        {p.categoria}
+                      </td>
 
-                      <td>${p.precio.toFixed(2)}</td>
+                      <td className="px-5 py-4 font-bold text-tinta whitespace-nowrap">
+                        ${p.precio.toFixed(2)}
+                      </td>
 
-                      <td>{p.stock}</td>
+                      <td className="px-5 py-4 text-tinta">{p.stock}</td>
 
-                      <td>
-                        <span className="rounded-full bg-rosaClaro/40 px-3 py-1 text-xs font-black text-magenta">
+                      <td className="px-5 py-4">
+                        <span className="inline-flex rounded-full bg-rosaClaro/40 px-4 py-2 text-xs font-black text-magenta whitespace-nowrap">
                           {p.estado.replace("_", " ")}
                         </span>
                       </td>
 
-                      <td className="flex gap-2 py-3">
-                        <button
-                          type="button"
-                          className="btn-light !p-2"
-                          onClick={() => editar(p)}
-                          title="Editar prenda"
-                        >
-                          <Edit size={16} />
-                        </button>
+                      <td className="px-5 py-4">
+                        <div className="flex justify-center gap-2">
+                          <button
+                            type="button"
+                            className="btn-light !p-3"
+                            onClick={() => editar(p)}
+                            title="Editar prenda"
+                          >
+                            <Edit size={16} />
+                          </button>
 
-                        <button
-                          type="button"
-                          className="btn-light !p-2"
-                          onClick={() => setProductoAEliminar(p)}
-                          title="Eliminar prenda"
-                        >
-                          <Trash2 size={16} />
-                        </button>
+                          <button
+                            type="button"
+                            className="btn-light !p-3"
+                            onClick={() => setProductoAEliminar(p)}
+                            title="Eliminar prenda"
+                          >
+                            <Trash2 size={16} />
+                          </button>
+                        </div>
                       </td>
                     </tr>
                   ))

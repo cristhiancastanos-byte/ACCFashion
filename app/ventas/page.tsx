@@ -16,9 +16,11 @@ type Producto = {
   id: number;
   codigo: string;
   nombre: string;
+  categoria: string;
   precio: number;
   stock: number;
   estado: string;
+  imagenUrl?: string | null;
 };
 
 type Cliente = {
@@ -32,6 +34,22 @@ type ItemCarrito = {
   cantidad: number;
 };
 
+const categorias = [
+  "Todas",
+  "Vestidos",
+  "Blusas",
+  "Tops",
+  "Pantalones",
+  "Faldas",
+  "Shorts",
+  "Jeans",
+  "Blazers",
+  "Conjuntos",
+  "Accesorios",
+  "Bolsas",
+  "Calzado"
+];
+
 type ToastTipo = "success" | "error";
 
 export default function VentasPage() {
@@ -42,6 +60,8 @@ export default function VentasPage() {
   const [toast, setToast] = useState<{ tipo: ToastTipo; texto: string } | null>(null);
   const [ultimaVenta, setUltimaVenta] = useState<any>(null);
   const [cargando, setCargando] = useState(false);
+  const [busquedaProducto, setBusquedaProducto] = useState("");
+const [categoriaFiltro, setCategoriaFiltro] = useState("Todas");
 
   function mostrarToast(tipo: ToastTipo, texto: string) {
     setToast({ tipo, texto });
@@ -88,6 +108,26 @@ export default function VentasPage() {
       0
     );
   }, [carrito]);
+
+  const productosFiltrados = useMemo(() => {
+  return productos.filter((producto) => {
+    const coincideCategoria =
+      categoriaFiltro === "Todas" || producto.categoria === categoriaFiltro;
+
+    const texto = [
+      producto.codigo,
+      producto.nombre,
+      producto.categoria,
+      producto.estado
+    ]
+      .join(" ")
+      .toLowerCase();
+
+    const coincideBusqueda = texto.includes(busquedaProducto.toLowerCase());
+
+    return coincideCategoria && coincideBusqueda;
+  });
+}, [productos, busquedaProducto, categoriaFiltro]);
 
   function agregar(producto: Producto) {
     if (producto.stock <= 0) {
@@ -262,48 +302,83 @@ export default function VentasPage() {
 
       <section className="grid gap-5 xl:grid-cols-[1fr_420px]">
         <div className="glass-card rounded-[2rem] p-6">
-          <div className="flex items-center gap-2 mb-5">
-            <ShoppingBag className="text-magenta" />
-            <h3 className="text-xl font-black">Prendas disponibles</h3>
-          </div>
+<div className="mb-5 flex flex-col gap-4">
+  <div className="flex items-center gap-2">
+    <ShoppingBag className="text-magenta" />
+    <h3 className="text-xl font-black">Prendas disponibles</h3>
+  </div>
 
-          <div className="grid gap-3 md:grid-cols-2 xl:grid-cols-3">
-            {productos.length === 0 ? (
+  <div className="grid gap-3 md:grid-cols-[1fr_220px]">
+    <input
+      className="input"
+      placeholder="Buscar prenda, código o categoría"
+      value={busquedaProducto}
+      onChange={(e) => setBusquedaProducto(e.target.value)}
+    />
+
+    <select
+      className="input"
+      value={categoriaFiltro}
+      onChange={(e) => setCategoriaFiltro(e.target.value)}
+    >
+      {categorias.map((categoria) => (
+        <option key={categoria} value={categoria}>
+          {categoria}
+        </option>
+      ))}
+    </select>
+  </div>
+</div>
+
+          <div className="grid gap-4 md:grid-cols-2 xl:grid-cols-3">
+            {productosFiltrados.length === 0 ? (
               <div className="rounded-3xl bg-white/70 p-5 border border-dorado/20 md:col-span-2 xl:col-span-3">
                 <p className="text-center text-tinta/60">
-                  No hay prendas disponibles para vender.
+                  No hay prendas disponibles con esos filtros.
                 </p>
               </div>
             ) : (
-              productos.map((p) => (
-                <div
-                  key={p.id}
-                  className="rounded-3xl bg-white/75 p-5 border border-dorado/20"
-                >
-                  <p className="text-xs font-black text-doradoOscuro">
-                    {p.codigo}
-                  </p>
+              productosFiltrados.map((p) => (
+<div
+  key={p.id}
+  className="overflow-hidden rounded-[2rem] border border-dorado/20 bg-white/80 shadow-sm"
+>
+  <div className="h-64 w-full bg-crema">
+    <img
+      src={p.imagenUrl || "/productos/default.webp"}
+      alt={p.nombre}
+      className="h-full w-full object-cover"
+    />
+  </div>
 
-                  <h4 className="mt-1 font-black">{p.nombre}</h4>
+  <div className="p-5">
+    <p className="text-xs font-black text-doradoOscuro">
+      {p.codigo}
+    </p>
 
-                  <p className="text-sm text-tinta/60">
-                    Stock: {p.stock}
-                  </p>
+    <h4 className="mt-2 line-clamp-2 min-h-[56px] text-xl font-black leading-tight text-tinta">
+      {p.nombre}
+    </h4>
 
-                  <div className="mt-4 flex items-center justify-between">
-                    <p className="text-lg font-black text-magenta">
-                      ${p.precio.toFixed(2)}
-                    </p>
+    <p className="mt-2 text-sm font-bold text-tinta/60">
+      Stock: {p.stock}
+    </p>
 
-                    <button
-                      className="btn-primary !py-2 disabled:opacity-50"
-                      disabled={p.stock <= 0}
-                      onClick={() => agregar(p)}
-                    >
-                      Agregar
-                    </button>
-                  </div>
-                </div>
+    <div className="mt-5 flex flex-col gap-3">
+      <p className="text-2xl font-black text-magenta">
+        ${p.precio.toFixed(2)}
+      </p>
+
+      <button
+        className="btn-primary w-full !py-3 disabled:opacity-50"
+        disabled={p.stock <= 0}
+        onClick={() => agregar(p)}
+      >
+        Agregar
+      </button>
+    </div>
+  </div>
+</div>
               ))
             )}
           </div>
@@ -339,11 +414,19 @@ export default function VentasPage() {
                   className="rounded-2xl bg-white/75 p-4 border border-dorado/20"
                 >
                   <div className="flex items-start justify-between gap-3">
-                    <div>
-                      <p className="font-black">{item.producto.nombre}</p>
-                      <p className="text-xs text-tinta/50">
-                        {item.producto.codigo}
-                      </p>
+                    <div className="flex items-center gap-3">
+                      <img
+                        src={item.producto.imagenUrl || "/productos/default.webp"}
+                        alt={item.producto.nombre}
+                        className="h-14 w-14 rounded-2xl object-cover border border-dorado/20 bg-crema"
+                      />
+
+                      <div>
+                        <p className="font-black">{item.producto.nombre}</p>
+                        <p className="text-xs text-tinta/50">
+                          {item.producto.codigo}
+                        </p>
+                      </div>
                     </div>
 
                     <button

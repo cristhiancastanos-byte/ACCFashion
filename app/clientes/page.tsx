@@ -1,7 +1,8 @@
 "use client";
 
+import Link from "next/link";
 import { PageHeader } from "@/components/PageHeader";
-import { Edit, Search, Trash2, UserPlus, X } from "lucide-react";
+import { Edit, Eye, Search, Trash2, UserPlus, X } from "lucide-react";
 import { FormEvent, useEffect, useMemo, useState } from "react";
 
 type Cliente = {
@@ -250,7 +251,7 @@ export default function ClientesPage() {
       )}
 
       <section className="grid gap-5 xl:grid-cols-[420px_1fr]">
-        <form onSubmit={guardar} className="glass-card rounded-[2rem] p-6 grid gap-3">
+        <form onSubmit={guardar} className="glass-card rounded-[2rem] p-6 grid gap-3 h-fit">
           <div className="flex items-center gap-2">
             <UserPlus className="text-magenta" />
             <h3 className="text-xl font-black">
@@ -347,7 +348,16 @@ export default function ClientesPage() {
                     {c.notas || "Sin notas registradas"}
                   </p>
 
-                  <div className="mt-4 flex gap-2">
+                  <div className="mt-4 flex flex-wrap gap-2">
+                    <Link
+                      href={`/clientes/${c.id}`}
+                      className="btn-light !px-3 !py-2 flex items-center gap-2"
+                      title="Ver detalle del cliente"
+                    >
+                      <Eye size={16} />
+                      Ver detalle
+                    </Link>
+
                     <button
                       type="button"
                       className="btn-light !p-2"

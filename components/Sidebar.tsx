@@ -4,17 +4,19 @@ import Image from "next/image";
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import {
-  Boxes,
   Home,
-  ReceiptText,
+  Boxes,
+  UsersRound,
   ShoppingBag,
-  UsersRound
+  ReceiptText,
+  Sparkles
 } from "lucide-react";
 
 const items = [
   { href: "/", label: "Inicio", icon: Home },
+  { href: "/catalogo", label: "Catálogo", icon: Sparkles },
   { href: "/productos", label: "Inventario", icon: Boxes },
-  { href: "/clientas", label: "Clientes", icon: UsersRound },
+  { href: "/clientes", label: "Clientes", icon: UsersRound },
   { href: "/ventas", label: "Ventas", icon: ShoppingBag },
   { href: "/reportes", label: "Reportes", icon: ReceiptText }
 ];
