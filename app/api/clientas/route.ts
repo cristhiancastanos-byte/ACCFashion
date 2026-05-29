@@ -1,107 +1,82 @@
 import { NextResponse } from "next/server";
 import { prisma } from "@/lib/prisma";
 
-export async function PUT(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+function validarCliente(body: any) {
+  const nombre = String(body.nombre || "").trim();
+  const telefono = String(body.telefono || "").trim();
+  const correo = String(body.correo || "").trim();
+
+  if (!nombre || !telefono) {
+    return "Nombre y teléfono son obligatorios.";
+  }
+
+  if (nombre.length < 3) {
+    return "El nombre debe tener al menos 3 caracteres.";
+  }
+
+  if (!/^\d{10}$/.test(telefono)) {
+    return "El teléfono debe tener 10 dígitos.";
+  }
+
+  if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
+    return "Ingresa un correo válido.";
+  }
+
+  return null;
+}
+
+export async function GET() {
   try {
-    const { id } = await context.params;
-    const clientaId = Number(id);
-    const body = await request.json();
-
-    if (Number.isNaN(clientaId)) {
-      return NextResponse.json(
-        { error: "ID de cliente inválido." },
-        { status: 400 }
-      );
-    }
-
-    const nombre = String(body.nombre || "").trim();
-    const telefono = String(body.telefono || "").trim();
-    const correo = String(body.correo || "").trim();
-    const notas = String(body.notas || "").trim();
-
-    if (!nombre || !telefono) {
-      return NextResponse.json(
-        { error: "Nombre y teléfono son obligatorios." },
-        { status: 400 }
-      );
-    }
-
-    if (nombre.length < 3) {
-      return NextResponse.json(
-        { error: "El nombre debe tener al menos 3 caracteres." },
-        { status: 400 }
-      );
-    }
-
-    if (!/^\d{10}$/.test(telefono)) {
-      return NextResponse.json(
-        { error: "El teléfono debe tener 10 dígitos." },
-        { status: 400 }
-      );
-    }
-
-    if (correo && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(correo)) {
-      return NextResponse.json(
-        { error: "Ingresa un correo válido." },
-        { status: 400 }
-      );
-    }
-
-    const clienta = await prisma.clienta.update({
-      where: {
-        id: clientaId
+    const clientas = await prisma.clienta.findMany({
+      orderBy: {
+        createdAt: "desc",
       },
-      data: {
-        nombre,
-        telefono,
-        correo: correo || null,
-        notas: notas || null
-      }
     });
 
-    return NextResponse.json(clienta);
-  } catch (error) {
-    console.error("Error al actualizar cliente:", error);
-
+    return NextResponse.json(clientas);
+  } catch {
     return NextResponse.json(
-      { error: "No se pudo actualizar el cliente." },
+      { error: "No se pudieron cargar las clientas." },
       { status: 500 }
     );
   }
 }
 
-export async function DELETE(
-  request: Request,
-  context: { params: Promise<{ id: string }> }
-) {
+export async function POST(request: Request) {
   try {
-    const { id } = await context.params;
-    const clientaId = Number(id);
+    const body = await request.json();
+    const error = validarCliente(body);
 
-    if (Number.isNaN(clientaId)) {
+    if (error) {
+      return NextResponse.json({ error }, { status: 400 });
+    }
+
+    const clienteDuplicado = await prisma.clienta.findFirst({
+      where: {
+        telefono: String(body.telefono).trim(),
+      },
+    });
+
+    if (clienteDuplicado) {
       return NextResponse.json(
-        { error: "ID de cliente inválido." },
-        { status: 400 }
+        { error: "Ya existe una clienta registrada con ese teléfono." },
+        { status: 409 }
       );
     }
 
-    await prisma.clienta.delete({
-      where: {
-        id: clientaId
-      }
+    const clienta = await prisma.clienta.create({
+      data: {
+        nombre: String(body.nombre).trim(),
+        telefono: String(body.telefono).trim(),
+        correo: body.correo ? String(body.correo).trim() : null,
+        notas: body.notas ? String(body.notas).trim() : null,
+      },
     });
 
-    return NextResponse.json({
-      mensaje: "Cliente eliminado correctamente."
-    });
-  } catch (error) {
-    console.error("Error al eliminar cliente:", error);
-
+    return NextResponse.json(clienta, { status: 201 });
+  } catch {
     return NextResponse.json(
-      { error: "No se pudo eliminar el cliente." },
+      { error: "No se pudo registrar la clienta." },
       { status: 500 }
     );
   }
