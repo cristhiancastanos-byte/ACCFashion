@@ -8,11 +8,13 @@ import {
   UsersRound
 } from "lucide-react";
 
-async function getDashboard() {
-  const baseUrl = process.env.NEXT_PUBLIC_BASE_URL || "http://localhost:3000";
+export const dynamic = "force-dynamic";
 
+async function getDashboard() {
   try {
-    const res = await fetch(`${baseUrl}/api/dashboard`, { cache: "no-store" });
+    const res = await fetch("https://acc-fashion-tk2v.vercel.app/api/dashboard", {
+      cache: "no-store"
+    });
 
     if (!res.ok) {
       throw new Error("Error al cargar el panel principal");
